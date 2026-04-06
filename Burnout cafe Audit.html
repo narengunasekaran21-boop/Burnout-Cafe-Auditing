@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Burnout — IT Audit Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-base: #080c14;
+    --bg-surface: #0d1421;
+    --bg-card: #111827;
+    --bg-card-hover: #141e2e;
+    --bg-elevated: #1a2436;
+    --border: rgba(255,255,255,0.06);
+    --border-accent: rgba(99,179,237,0.25);
+    --text-primary: #f0f4ff;
+    --text-secondary: #8899b4;
+    --text-muted: #4a5a72;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-teal: #14b8a6;
+    --accent-amber: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-green: #22c55e;
+    --accent-purple: #8b5cf6;
+    --sidebar-w: 240px;
+    --header-h: 64px;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --shadow-glow: 0 0 0 1px rgba(59,130,246,0.15), 0 4px 24px rgba(0,0,0,0.4);
+    --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+  }
+ 
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+ 
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    display: flex;
+    height: 100vh;
+  }
+ 
+  /* ─── SIDEBAR ─────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 20;
+  }
+ 
+  .sidebar::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 1px; height: 100%;
+    background: linear-gradient(180deg, transparent, rgba(59,130,246,0.3) 40%, rgba(6,182,212,0.2) 70%, transparent);
+    pointer-events: none;
+  }
+ 
+  .logo-wrap {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+ 
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800;
+    font-family: 'Syne', sans-serif;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(59,130,246,0.4);
+    flex-shrink: 0;
+  }
+ 
+  .logo-text { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo-sub { font-size: 10px; color: var(--text-muted); letter-spacing: 0.5px; font-weight: 400; }
+ 
+  .nav-section { padding: 20px 12px 8px; }
+  .nav-label { font-size: 10px; color: var(--text-muted); letter-spacing: 1.5px; font-weight: 500; text-transform: uppercase; padding: 0 8px 10px; }
+ 
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: var(--transition);
+    position: relative;
+    margin-bottom: 2px;
+    user-select: none;
+  }
+ 
+  .nav-item:hover { background: var(--bg-elevated); color: var(--text-primary); }
+ 
+  .nav-item.active {
+    background: rgba(59,130,246,0.12);
+    color: #60a5fa;
+  }
+ 
+  .nav-item.active::before {
+    content: '';
+    position: absolute; left: 0; top: 20%; height: 60%;
+    width: 3px; background: var(--accent-blue);
+    border-radius: 0 3px 3px 0;
+  }
+ 
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto;
+    background: rgba(239,68,68,0.15);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 20px; font-size: 10px; font-weight: 600;
+    padding: 1px 7px; line-height: 16px;
+  }
+ 
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+ 
+  .user-chip {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-elevated);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .user-chip:hover { background: var(--bg-card-hover); }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .user-role { font-size: 11px; color: var(--text-muted); }
+ 
+  /* ─── MAIN ─────────────────────────────────── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    min-width: 0;
+  }
+ 
+  /* ─── HEADER ────────────────────────────────── */
+  .header {
+    height: var(--header-h);
+    min-height: var(--header-h);
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+ 
+  .header-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600; margin-right: auto; }
+  .header-title span { color: var(--text-muted); font-weight: 400; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+ 
+  .filter-group { display: flex; align-items: center; gap: 8px; }
+  .filter-label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+ 
+  .filter-select {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    padding: 7px 12px;
+    cursor: pointer;
+    outline: none;
+    transition: var(--transition);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238899b4' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+  .filter-select:focus { border-color: var(--accent-blue); }
+  .filter-select:hover { border-color: var(--border-accent); }
+ 
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px; font-weight: 500;
+    cursor: pointer; border: none;
+    transition: var(--transition);
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+    box-shadow: 0 0 16px rgba(59,130,246,0.25);
+  }
+  .btn-primary:hover { box-shadow: 0 0 24px rgba(59,130,246,0.4); transform: translateY(-1px); }
+  .btn-ghost { background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text-primary); border-color: var(--border-accent); }
+ 
+  /* ─── CONTENT ─────────────────────────────── */
+  .content {
+    flex: 1;
+    overflow-y: scroll;
+    padding: 24px;
+    scroll-behavior: smooth;
+    min-height: 0;
+  }
+ 
+  .content::-webkit-scrollbar { width: 5px; }
+  .content::-webkit-scrollbar-track { background: transparent; }
+  .content::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 10px; }
+ 
+  .section { display: none; }
+  .section.active { display: block; }
+ 
+  /* ─── SECTION HEADER ─────────────────────── */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
+  .section-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .section-meta { display: flex; gap: 8px; align-items: center; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 6px rgba(34,197,94,0.6); display: inline-block; margin-right: 4px; }
+ 
+  /* ─── CARDS ───────────────────────────────── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+ 
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition);
+    cursor: default;
+  }
+  .kpi-card:hover { background: var(--bg-card-hover); border-color: var(--border-accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .kpi-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .kpi-card.blue::before { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
+  .kpi-card.green::before { background: linear-gradient(90deg, #22c55e, #14b8a6); }
+  .kpi-card.red::before { background: linear-gradient(90deg, #ef4444, #f97316); }
+  .kpi-card.amber::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .kpi-card.purple::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+ 
+  .kpi-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 500; margin-bottom: 10px; }
+  .kpi-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
+  .kpi-change { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+  .kpi-change.up { color: var(--accent-green); }
+  .kpi-change.down { color: var(--accent-red); }
+  .kpi-icon {
+    position: absolute; right: 16px; top: 16px;
+    font-size: 22px; opacity: 0.15;
+  }
+ 
+  /* ─── CHARTS GRID ─────────────────────────── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1.2fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+ 
+  .charts-row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+ 
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: var(--transition);
+  }
+  .chart-card:hover { border-color: rgba(255,255,255,0.08); }
+ 
+  .chart-card-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .chart-title { font-family: 'Syne', sans-serif; font-size: 13.5px; font-weight: 600; }
+  .chart-subtitle { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .chart-badge {
+    font-size: 10.5px; padding: 3px 9px; border-radius: 20px; font-weight: 500;
+    background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.15);
+  }
+ 
+  canvas { display: block; }
+ 
+  /* ─── ANOMALY STRIP ───────────────────────── */
+  .anomaly-strip {
+    background: rgba(239,68,68,0.06);
+    border: 1px solid rgba(239,68,68,0.15);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .anomaly-icon { font-size: 18px; flex-shrink: 0; }
+  .anomaly-title { font-size: 13px; font-weight: 600; color: #fca5a5; }
+  .anomaly-desc { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .anomaly-items { display: flex; gap: 10px; margin-left: auto; }
+  .anomaly-tag {
+    background: rgba(239,68,68,0.1); color: #f87171;
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 20px; font-size: 11px; font-weight: 500; padding: 3px 10px;
+    white-space: nowrap;
+  }
+  .anomaly-tag.amber { background: rgba(245,158,11,0.1); color: #fbbf24; border-color: rgba(245,158,11,0.2); }
+ 
+  /* ─── TABLE ───────────────────────────────── */
+  .table-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+ 
+  .table-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+ 
+  .table-search {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px; padding: 7px 12px;
+    outline: none; width: 220px;
+    transition: var(--transition);
+  }
+  .table-search:focus { border-color: var(--accent-blue); }
+  .table-search::placeholder { color: var(--text-muted); }
+ 
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: rgba(255,255,255,0.02); }
+  th {
+    text-align: left; padding: 12px 16px;
+    font-size: 11px; font-weight: 600;
+    color: var(--text-muted); letter-spacing: 0.8px; text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text-secondary); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  tr.flagged td { background: rgba(239,68,68,0.04); }
+  tr.flagged:hover td { background: rgba(239,68,68,0.07); }
+  td.amount { font-family: 'Syne', sans-serif; font-size: 13.5px; color: var(--text-primary); font-weight: 600; }
+ 
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  }
+  .badge-green { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+  .badge-red { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+  .badge-amber { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+  .badge-blue { background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+  .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+ 
+  .payment-icon { display: inline-flex; align-items: center; gap: 6px; }
+  .payment-icon::before { content: ''; width: 20px; height: 14px; border-radius: 3px; display: inline-block; }
+  .pay-cash::before { background: linear-gradient(135deg,#22c55e,#16a34a); }
+  .pay-card::before { background: linear-gradient(135deg,#3b82f6,#1d4ed8); }
+  .pay-digital::before { background: linear-gradient(135deg,#8b5cf6,#7c3aed); }
+  .pay-upi::before { background: linear-gradient(135deg,#f59e0b,#d97706); }
+ 
+  /* ─── RISK SECTION ───────────────────────── */
+  .risk-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 14px; margin-bottom: 20px; }
+  .risk-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .risk-tier { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .risk-tier-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .risk-tier-label { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+  .risk-count { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; margin-bottom: 4px; }
+  .risk-sub { font-size: 12px; color: var(--text-muted); }
+  .risk-bar { height: 4px; border-radius: 4px; margin-top: 14px; background: var(--bg-elevated); overflow: hidden; }
+  .risk-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+ 
+  .risk-list { display: flex; flex-direction: column; gap: 10px; }
+  .risk-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-elevated); border-radius: var(--radius-sm);
+    border-left: 3px solid transparent;
+    transition: var(--transition);
+  }
+  .risk-item:hover { background: var(--bg-card-hover); }
+  .risk-item.high { border-left-color: var(--accent-red); }
+  .risk-item.medium { border-left-color: var(--accent-amber); }
+  .risk-item.low { border-left-color: var(--accent-green); }
+  .risk-item-info { flex: 1; min-width: 0; }
+  .risk-item-name { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .risk-item-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .risk-score-chip {
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+    padding: 3px 10px; border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .score-high { background: rgba(239,68,68,0.15); color: #f87171; }
+  .score-med { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .score-low { background: rgba(34,197,94,0.15); color: #4ade80; }
+ 
+  /* ─── AUDIT REPORTS ──────────────────────── */
+  .audit-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .audit-severity-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    transition: var(--transition);
+  }
+  .audit-severity-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .audit-sev-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .audit-sev-icon { font-size: 22px; }
+  .audit-sev-label { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+  .audit-sev-count { font-family: 'Syne', sans-serif; font-size: 40px; font-weight: 800; margin-bottom: 16px; }
+  .audit-finding {
+    padding: 10px 12px;
+    background: var(--bg-elevated); border-radius: var(--radius-sm);
+    margin-bottom: 8px; font-size: 12.5px; color: var(--text-secondary);
+    border-left: 2px solid transparent;
+    transition: var(--transition);
+  }
+  .audit-finding:hover { color: var(--text-primary); }
+  .audit-finding.critical-f { border-left-color: var(--accent-red); }
+  .audit-finding.major-f { border-left-color: var(--accent-amber); }
+  .audit-finding.minor-f { border-left-color: var(--accent-blue); }
+  .audit-finding-title { font-weight: 600; margin-bottom: 3px; color: var(--text-primary); font-size: 12px; }
+  .audit-finding-desc { font-size: 11px; color: var(--text-muted); }
+ 
+  .recommendations-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 20px;
+  }
+  .rec-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .rec-item {
+    display: flex; gap: 12px;
+    padding: 14px;
+    background: var(--bg-elevated); border-radius: var(--radius-sm);
+  }
+  .rec-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .rec-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+  .rec-desc { font-size: 12px; color: var(--text-muted); }
+  .rec-priority {
+    margin-left: auto; align-self: flex-start; flex-shrink: 0;
+    font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600;
+  }
+  .pri-high { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+  .pri-med { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+  .pri-low { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+ 
+  /* ─── SETTINGS ────────────────────────────── */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .settings-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px;
+  }
+  .settings-group { margin-bottom: 18px; }
+  .settings-label { font-size: 12px; color: var(--text-muted); margin-bottom: 7px; display: block; font-weight: 500; letter-spacing: 0.3px; }
+  .settings-input {
+    width: 100%; background: var(--bg-elevated);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text-primary); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; padding: 9px 12px; outline: none;
+    transition: var(--transition);
+  }
+  .settings-input:focus { border-color: var(--accent-blue); }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-info { font-size: 13px; color: var(--text-secondary); }
+  .toggle-info small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .toggle {
+    width: 38px; height: 22px; border-radius: 11px;
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    cursor: pointer; position: relative; flex-shrink: 0;
+    transition: var(--transition);
+  }
+  .toggle.on { background: linear-gradient(90deg, #3b82f6, #2563eb); border-color: #3b82f6; }
+  .toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; transition: var(--transition);
+  }
+  .toggle.on::after { transform: translateX(16px); }
+ 
+  /* ─── SCROLLBAR ───────────────────────────── */
+  select option { background: #1a2436; color: #f0f4ff; }
+ 
+  /* ─── HEATMAP ─────────────────────────────── */
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(7,1fr);
+    gap: 3px;
+    margin-top: 8px;
+  }
+  .heatmap-cell {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    transition: var(--transition);
+    cursor: pointer;
+  }
+  .heatmap-cell:hover { opacity: 0.8; transform: scale(1.1); }
+  .heatmap-label {
+    display: grid; grid-template-columns: repeat(7,1fr);
+    gap: 3px; margin-bottom: 3px;
+  }
+  .heatmap-label span { font-size: 9px; color: var(--text-muted); text-align: center; }
+</style>
+</head>
+<body>
+ 
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo-wrap">
+    <div class="logo-icon">B</div>
+    <div>
+      <div class="logo-text">burnout</div>
+      <div class="logo-sub">AUDIT PLATFORM</div>
+    </div>
+  </div>
+ 
+  <div class="nav-section">
+    <div class="nav-label">Core</div>
+    <div class="nav-item active" data-section="dashboard">
+      <span class="nav-icon">⬡</span> Dashboard
+    </div>
+    <div class="nav-item" data-section="transactions">
+      <span class="nav-icon">⇄</span> Transactions
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item" data-section="risk">
+      <span class="nav-icon">⚠</span> Risk Management
+    </div>
+    <div class="nav-item" data-section="audit">
+      <span class="nav-icon">☰</span> Audit Reports
+    </div>
+  </div>
+ 
+  <div class="nav-section">
+    <div class="nav-label">System</div>
+    <div class="nav-item" data-section="settings">
+      <span class="nav-icon">⚙</span> Settings
+    </div>
+  </div>
+ 
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="user-avatar">SA</div>
+      <div>
+        <div class="user-name">Senior Auditor</div>
+        <div class="user-role">IT Compliance</div>
+      </div>
+    </div>
+  </div>
+</aside>
+ 
+<!-- MAIN -->
+<div class="main">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-title" id="header-title">
+      Dashboard <span>/ Overview</span>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Category</span>
+      <select class="filter-select" id="filter-category" onchange="applyFilters()">
+        <option value="all">All Categories</option>
+        <option value="Beverages">Beverages</option>
+        <option value="Food">Food</option>
+        <option value="Merchandise">Merchandise</option>
+        <option value="Combos">Combos</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Payment</span>
+      <select class="filter-select" id="filter-payment" onchange="applyFilters()">
+        <option value="all">All Methods</option>
+        <option value="Cash">Cash</option>
+        <option value="Card">Card</option>
+        <option value="UPI">UPI</option>
+        <option value="Digital Wallet">Digital Wallet</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Period</span>
+      <select class="filter-select" id="filter-date">
+        <option>Last 30 Days</option>
+        <option>Last 7 Days</option>
+        <option>This Quarter</option>
+        <option>This Year</option>
+      </select>
+    </div>
+    <button class="btn btn-ghost">⤓ Export</button>
+    <button class="btn btn-primary">⟳ Refresh</button>
+  </header>
+ 
+  <!-- CONTENT -->
+  <div class="content">
+ 
+    <!-- ── DASHBOARD SECTION ── -->
+    <section class="section active" id="section-dashboard">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Audit Overview</div>
+          <div class="section-subtitle"><span class="status-dot"></span>Live monitoring · Last updated 2 min ago</div>
+        </div>
+        <div class="section-meta">
+          <span style="font-size:12px;color:var(--text-muted)">Fiscal Period:</span>
+          <span style="font-size:12px;color:#60a5fa;font-weight:500;">Q1 2025</span>
+        </div>
+      </div>
+ 
+      <!-- ANOMALY STRIP -->
+      <div class="anomaly-strip">
+        <span class="anomaly-icon">⚡</span>
+        <div>
+          <div class="anomaly-title">Anomaly Detection Active</div>
+          <div class="anomaly-desc">System has flagged unusual transaction patterns requiring immediate review.</div>
+        </div>
+        <div class="anomaly-items">
+          <span class="anomaly-tag">3 High-Value Alerts</span>
+          <span class="anomaly-tag amber">2 Duplicate Transactions</span>
+          <span class="anomaly-tag">1 Unusual Pattern</span>
+        </div>
+      </div>
+ 
+      <!-- KPI CARDS -->
+      <div class="kpi-grid">
+        <div class="kpi-card blue">
+          <div class="kpi-icon">₹</div>
+          <div class="kpi-label">Total Sales</div>
+          <div class="kpi-value">₹4.82L</div>
+          <div class="kpi-change up">▲ 12.4% vs last month</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-icon">⇄</div>
+          <div class="kpi-label">Total Transactions</div>
+          <div class="kpi-value">2,847</div>
+          <div class="kpi-change up">▲ 8.1% vs last month</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-icon">⚠</div>
+          <div class="kpi-label">High Risk Count</div>
+          <div class="kpi-value">23</div>
+          <div class="kpi-change down">▲ 5 new this week</div>
+        </div>
+        <div class="kpi-card amber">
+          <div class="kpi-icon">⊡</div>
+          <div class="kpi-label">Duplicates Found</div>
+          <div class="kpi-value">7</div>
+          <div class="kpi-change down">▼ 3 pending review</div>
+        </div>
+        <div class="kpi-card purple">
+          <div class="kpi-icon">⏱</div>
+          <div class="kpi-label">Pending Approvals</div>
+          <div class="kpi-value">14</div>
+          <div class="kpi-change down">▲ 2 overdue</div>
+        </div>
+      </div>
+ 
+      <!-- CHARTS ROW 1 -->
+      <div class="charts-grid">
+        <!-- Bar Chart -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-title">Sales by Category</div>
+              <div class="chart-subtitle">Revenue breakdown per product line</div>
+            </div>
+            <span class="chart-badge">Bar Chart</span>
+          </div>
+          <canvas id="salesBarChart" height="200"></canvas>
+        </div>
+ 
+        <!-- Doughnut -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-title">Payment Distribution</div>
+              <div class="chart-subtitle">By payment method</div>
+            </div>
+            <span class="chart-badge">Doughnut</span>
+          </div>
+          <canvas id="paymentDoughnut" height="200"></canvas>
+        </div>
+ 
+        <!-- Risk Distribution -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-title">Risk Distribution</div>
+              <div class="chart-subtitle">Score-based classification</div>
+            </div>
+          </div>
+          <!-- Risk Heatmap -->
+          <div style="margin-top:4px;">
+            <div class="heatmap-label">
+              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
+            <div class="heatmap-grid" id="heatmap"></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:12px;align-items:center;">
+            <span style="font-size:10px;color:var(--text-muted)">Low</span>
+            <div style="display:flex;gap:3px;">
+              <div style="width:14px;height:14px;border-radius:3px;background:rgba(34,197,94,0.2)"></div>
+              <div style="width:14px;height:14px;border-radius:3px;background:rgba(34,197,94,0.45)"></div>
+              <div style="width:14px;height:14px;border-radius:3px;background:rgba(245,158,11,0.45)"></div>
+              <div style="width:14px;height:14px;border-radius:3px;background:rgba(239,68,68,0.45)"></div>
+              <div style="width:14px;height:14px;border-radius:3px;background:rgba(239,68,68,0.85)"></div>
+            </div>
+            <span style="font-size:10px;color:var(--text-muted)">High</span>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- CHARTS ROW 2 -->
+      <div class="charts-row2">
+        <!-- Line Chart -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-title">Sales Trend</div>
+              <div class="chart-subtitle">Daily revenue over 30 days</div>
+            </div>
+            <span class="chart-badge">Line Chart</span>
+          </div>
+          <canvas id="salesLineChart" height="120"></canvas>
+        </div>
+        <!-- Stacked Risk -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-title">Risk Score Trend</div>
+              <div class="chart-subtitle">High / Medium / Low over weeks</div>
+            </div>
+            <span class="chart-badge">Stacked Bar</span>
+          </div>
+          <canvas id="riskStackedChart" height="120"></canvas>
+        </div>
+      </div>
+    </section>
+ 
+    <!-- ── TRANSACTIONS SECTION ── -->
+    <section class="section" id="section-transactions">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Transaction Ledger</div>
+          <div class="section-subtitle">All transactions with anomaly flags</div>
+        </div>
+        <div class="section-meta">
+          <button class="btn btn-ghost" style="font-size:12px;">⤓ Export CSV</button>
+          <button class="btn btn-primary" style="font-size:12px;">+ Add Entry</button>
+        </div>
+      </div>
+ 
+      <div class="table-card">
+        <div class="table-header">
+          <div>
+            <div class="chart-title">All Transactions</div>
+            <div class="chart-subtitle" style="margin-top:2px;">2,847 records · <span style="color:#f87171;">3 flagged</span></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" class="table-search" placeholder="🔍  Search transactions…" id="txSearch" onkeyup="filterTable()"/>
+            <select class="filter-select" style="width:140px;" id="txStatusFilter" onchange="filterTable()">
+              <option value="all">All Status</option>
+              <option value="Approved">Approved</option>
+              <option value="Flagged">Flagged</option>
+              <option value="Pending">Pending</option>
+            </select>
+          </div>
+        </div>
+        <table id="txTable">
+          <thead>
+            <tr>
+              <th>TXN ID</th>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Amount</th>
+              <th>Payment</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th>Risk</th>
+            </tr>
+          </thead>
+          <tbody id="txBody"></tbody>
+        </table>
+      </div>
+    </section>
+ 
+    <!-- ── RISK SECTION ── -->
+    <section class="section" id="section-risk">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Risk Management</div>
+          <div class="section-subtitle">Transaction risk scoring and classification</div>
+        </div>
+      </div>
+ 
+      <div class="risk-grid">
+        <div class="risk-card">
+          <div class="risk-tier">
+            <div class="risk-tier-dot" style="background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,0.5);"></div>
+            <div class="risk-tier-label" style="color:#f87171;">High Risk</div>
+          </div>
+          <div class="risk-count" style="color:#f87171;">23</div>
+          <div class="risk-sub">Transactions above ₹5,000 or flagged patterns</div>
+          <div class="risk-bar"><div class="risk-bar-fill" style="width:62%;background:linear-gradient(90deg,#ef4444,#f97316);"></div></div>
+        </div>
+        <div class="risk-card">
+          <div class="risk-tier">
+            <div class="risk-tier-dot" style="background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,0.5);"></div>
+            <div class="risk-tier-label" style="color:#fbbf24;">Medium Risk</div>
+          </div>
+          <div class="risk-count" style="color:#fbbf24;">61</div>
+          <div class="risk-sub">Transactions between ₹2,000 – ₹5,000</div>
+          <div class="risk-bar"><div class="risk-bar-fill" style="width:41%;background:linear-gradient(90deg,#f59e0b,#fbbf24);"></div></div>
+        </div>
+        <div class="risk-card" style="grid-column:span 1;">
+          <div class="chart-card-header" style="margin-bottom:12px;">
+            <div class="chart-title">Risk-Scored Transactions</div>
+          </div>
+          <div class="risk-list" id="riskList"></div>
+        </div>
+      </div>
+ 
+      <!-- Low risk -->
+      <div class="risk-card" style="margin-bottom:20px;">
+        <div style="display:flex;gap:20px;align-items:center;">
+          <div>
+            <div class="risk-tier">
+              <div class="risk-tier-dot" style="background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,0.5);"></div>
+              <div class="risk-tier-label" style="color:#4ade80;">Low Risk</div>
+            </div>
+            <div class="risk-count" style="color:#4ade80;">2,763</div>
+            <div class="risk-sub">Standard transactions below ₹2,000</div>
+          </div>
+          <div style="flex:1;margin-left:20px;">
+            <canvas id="riskPieChart" height="160"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+ 
+    <!-- ── AUDIT REPORTS SECTION ── -->
+    <section class="section" id="section-audit">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Audit Findings</div>
+          <div class="section-subtitle">Q1 2025 · Burnout Café — Full Audit Report</div>
+        </div>
+        <div class="section-meta">
+          <button class="btn btn-primary">⤓ Download PDF Report</button>
+        </div>
+      </div>
+ 
+      <div class="audit-grid">
+        <!-- CRITICAL -->
+        <div class="audit-severity-card">
+          <div class="audit-sev-header">
+            <span class="audit-sev-icon">🔴</span>
+            <span class="audit-sev-label" style="color:#f87171;">Critical Issues</span>
+          </div>
+          <div class="audit-sev-count" style="color:#f87171;">3</div>
+          <div class="audit-finding critical-f">
+            <div class="audit-finding-title">Duplicate Transaction Processing</div>
+            <div class="audit-finding-desc">7 transactions processed twice within 5-minute window. Total exposure: ₹14,200.</div>
+          </div>
+          <div class="audit-finding critical-f">
+            <div class="audit-finding-title">Unauthorized High-Value Override</div>
+            <div class="audit-finding-desc">3 transactions above ₹8,000 approved without dual authorization.</div>
+          </div>
+          <div class="audit-finding critical-f">
+            <div class="audit-finding-title">Missing Receipt Audit Trail</div>
+            <div class="audit-finding-desc">12 cash transactions with no corresponding receipt records.</div>
+          </div>
+        </div>
+ 
+        <!-- MAJOR -->
+        <div class="audit-severity-card">
+          <div class="audit-sev-header">
+            <span class="audit-sev-icon">🟡</span>
+            <span class="audit-sev-label" style="color:#fbbf24;">Major Issues</span>
+          </div>
+          <div class="audit-sev-count" style="color:#fbbf24;">7</div>
+          <div class="audit-finding major-f">
+            <div class="audit-finding-title">Shift Reconciliation Gaps</div>
+            <div class="audit-finding-desc">Daily closing totals mismatch POS records by ₹800–₹1,200 on 5 occasions.</div>
+          </div>
+          <div class="audit-finding major-f">
+            <div class="audit-finding-title">Discount Policy Violation</div>
+            <div class="audit-finding-desc">14 discounts applied beyond authorized 15% limit without manager approval.</div>
+          </div>
+          <div class="audit-finding major-f">
+            <div class="audit-finding-title">Inventory-Sales Mismatch</div>
+            <div class="audit-finding-desc">Espresso bean consumption 18% above logged sales — potential waste or unrecorded usage.</div>
+          </div>
+        </div>
+ 
+        <!-- MINOR -->
+        <div class="audit-severity-card">
+          <div class="audit-sev-header">
+            <span class="audit-sev-icon">🔵</span>
+            <span class="audit-sev-label" style="color:#60a5fa;">Minor Issues</span>
+          </div>
+          <div class="audit-sev-count" style="color:#60a5fa;">11</div>
+          <div class="audit-finding minor-f">
+            <div class="audit-finding-title">Inconsistent Item Naming</div>
+            <div class="audit-finding-desc">5 product names differ between POS system and inventory records.</div>
+          </div>
+          <div class="audit-finding minor-f">
+            <div class="audit-finding-title">Delayed EOD Reports</div>
+            <div class="audit-finding-desc">End-of-day reports submitted after 11:00 PM on 8 occasions this quarter.</div>
+          </div>
+          <div class="audit-finding minor-f">
+            <div class="audit-finding-title">Staff Code Sharing</div>
+            <div class="audit-finding-desc">2 instances of staff using shared login credentials detected.</div>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- RECOMMENDATIONS -->
+      <div class="recommendations-card">
+        <div class="chart-title" style="font-size:15px;">Auditor Recommendations</div>
+        <div class="chart-subtitle" style="margin-top:3px;">Action items ranked by priority and impact</div>
+        <div class="rec-list">
+          <div class="rec-item">
+            <div class="rec-num">1</div>
+            <div>
+              <div class="rec-title">Implement Dual-Authorization for Transactions Above ₹5,000</div>
+              <div class="rec-desc">Enforce two-factor manager approval in POS system for all high-value transactions. Estimated implementation: 2 weeks.</div>
+            </div>
+            <span class="rec-priority pri-high">Critical</span>
+          </div>
+          <div class="rec-item">
+            <div class="rec-num">2</div>
+            <div>
+              <div class="rec-title">Deploy Real-Time Duplicate Detection Engine</div>
+              <div class="rec-desc">Integrate transaction deduplication logic with 3-minute rolling window and automatic hold on suspected duplicates.</div>
+            </div>
+            <span class="rec-priority pri-high">Critical</span>
+          </div>
+          <div class="rec-item">
+            <div class="rec-num">3</div>
+            <div>
+              <div class="rec-title">Mandatory Individual Staff Login Credentials</div>
+              <div class="rec-desc">Issue unique POS credentials per staff member and enforce password rotation every 60 days.</div>
+            </div>
+            <span class="rec-priority pri-med">Major</span>
+          </div>
+          <div class="rec-item">
+            <div class="rec-num">4</div>
+            <div>
+              <div class="rec-title">Automate Inventory-to-Sales Reconciliation</div>
+              <div class="rec-desc">Configure daily automated reconciliation with email alerts when variance exceeds 5%.</div>
+            </div>
+            <span class="rec-priority pri-med">Major</span>
+          </div>
+          <div class="rec-item">
+            <div class="rec-num">5</div>
+            <div>
+              <div class="rec-title">Standardize Product Nomenclature Across Systems</div>
+              <div class="rec-desc">Conduct a one-time master data cleanup and enforce naming convention through POS configuration locks.</div>
+            </div>
+            <span class="rec-priority pri-low">Minor</span>
+          </div>
+        </div>
+      </div>
+    </section>
+ 
+    <!-- ── SETTINGS SECTION ── -->
+    <section class="section" id="section-settings">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Platform Settings</div>
+          <div class="section-subtitle">Configure audit parameters and notification rules</div>
+        </div>
+      </div>
+ 
+      <div class="settings-grid">
+        <div class="settings-card">
+          <div class="chart-title" style="margin-bottom:18px;">Organization</div>
+          <div class="settings-group">
+            <label class="settings-label">Organization Name</label>
+            <input type="text" class="settings-input" value="Burnout Café" />
+          </div>
+          <div class="settings-group">
+            <label class="settings-label">Branch</label>
+            <input type="text" class="settings-input" value="Main Branch — Chennai" />
+          </div>
+          <div class="settings-group">
+            <label class="settings-label">Fiscal Year Start</label>
+            <input type="text" class="settings-input" value="April 1, 2025" />
+          </div>
+          <div class="settings-group">
+            <label class="settings-label">Auditor Email</label>
+            <input type="text" class="settings-input" value="audit@burnoutcafe.in" />
+          </div>
+          <button class="btn btn-primary" style="margin-top:8px;">Save Changes</button>
+        </div>
+ 
+        <div class="settings-card">
+          <div class="chart-title" style="margin-bottom:18px;">Risk Thresholds</div>
+          <div class="settings-group">
+            <label class="settings-label">High Risk Amount (₹)</label>
+            <input type="text" class="settings-input" value="5,000" />
+          </div>
+          <div class="settings-group">
+            <label class="settings-label">Medium Risk Amount (₹)</label>
+            <input type="text" class="settings-input" value="2,000" />
+          </div>
+          <div class="settings-group">
+            <label class="settings-label">Duplicate Window (minutes)</label>
+            <input type="text" class="settings-input" value="5" />
+          </div>
+          <div class="settings-group">
+            <label class="settings-label">Max Discount Threshold (%)</label>
+            <input type="text" class="settings-input" value="15" />
+          </div>
+          <button class="btn btn-primary" style="margin-top:8px;">Update Thresholds</button>
+        </div>
+ 
+        <div class="settings-card">
+          <div class="chart-title" style="margin-bottom:18px;">Notifications</div>
+          <div class="toggle-row">
+            <div class="toggle-info">Email Alerts <small>Receive flagged transaction emails</small></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">Duplicate Detection <small>Auto-hold suspected duplicates</small></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">Daily Digest <small>Morning summary at 8:00 AM</small></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">Risk Score Alerts <small>Notify on high-risk entries</small></div>
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">Inventory Mismatch <small>Alert on variance above threshold</small></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+ 
+        <div class="settings-card">
+          <div class="chart-title" style="margin-bottom:18px;">Audit Schedule</div>
+          <div class="toggle-row">
+            <div class="toggle-info">Auto-run Daily Reconciliation <small>Runs at midnight</small></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">Weekly Compliance Report <small>Every Monday 6:00 AM</small></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">Monthly Full Audit <small>First of each month</small></div>
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">Real-Time Anomaly Scan <small>Continuous background process</small></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div style="margin-top:16px;">
+            <button class="btn btn-primary" style="width:100%;">Run Full Audit Now</button>
+          </div>
+        </div>
+      </div>
+    </section>
+ 
+  </div><!-- /content -->
+</div><!-- /main -->
+ 
+<script>
+// ─── DATA ────────────────────────────────────────
+const TRANSACTIONS = [
+  {id:'TXN-2401',product:'Espresso Shot',category:'Beverages',amount:120,payment:'Cash',time:'08:14',status:'Approved',risk:'Low'},
+  {id:'TXN-2402',product:'Croissant',category:'Food',amount:180,payment:'UPI',time:'08:31',status:'Approved',risk:'Low'},
+  {id:'TXN-2403',product:'Cold Brew',category:'Beverages',amount:280,payment:'Card',time:'09:02',status:'Approved',risk:'Low'},
+  {id:'TXN-2404',product:'Burnout Merch Bundle',category:'Merchandise',amount:8500,payment:'Card',time:'09:45',status:'Flagged',risk:'High'},
+  {id:'TXN-2405',product:'Combo Deal A',category:'Combos',amount:650,payment:'Digital Wallet',time:'10:12',status:'Approved',risk:'Low'},
+  {id:'TXN-2406',product:'Latte (Duplicate)',category:'Beverages',amount:240,payment:'UPI',time:'10:34',status:'Flagged',risk:'Medium'},
+  {id:'TXN-2407',product:'Latte',category:'Beverages',amount:240,payment:'UPI',time:'10:34',status:'Flagged',risk:'Medium'},
+  {id:'TXN-2408',product:'Avocado Toast',category:'Food',amount:380,payment:'Card',time:'11:08',status:'Approved',risk:'Low'},
+  {id:'TXN-2409',product:'Staff Meal',category:'Food',amount:5200,payment:'Cash',time:'12:00',status:'Pending',risk:'High'},
+  {id:'TXN-2410',product:'Cappuccino x4',category:'Beverages',amount:960,payment:'UPI',time:'12:45',status:'Approved',risk:'Low'},
+  {id:'TXN-2411',product:'Iced Matcha',category:'Beverages',amount:320,payment:'Digital Wallet',time:'13:20',status:'Approved',risk:'Low'},
+  {id:'TXN-2412',product:'Café Combo B',category:'Combos',amount:2200,payment:'Card',time:'13:58',status:'Approved',risk:'Medium'},
+  {id:'TXN-2413',product:'Signature Mug',category:'Merchandise',amount:750,payment:'Cash',time:'14:30',status:'Approved',risk:'Low'},
+  {id:'TXN-2414',product:'Cold Brew (Bulk)',category:'Beverages',amount:6800,payment:'Card',time:'15:00',status:'Flagged',risk:'High'},
+  {id:'TXN-2415',product:'Waffle',category:'Food',amount:290,payment:'UPI',time:'15:42',status:'Approved',risk:'Low'},
+];
+ 
+// ─── NAVIGATION ───────────────────────────────────
+const sections = {
+  dashboard: { el: 'section-dashboard', title: 'Dashboard', sub: '/ Overview' },
+  transactions: { el: 'section-transactions', title: 'Transactions', sub: '/ Ledger' },
+  risk: { el: 'section-risk', title: 'Risk Management', sub: '/ Analysis' },
+  audit: { el: 'section-audit', title: 'Audit Reports', sub: '/ Q1 2025' },
+  settings: { el: 'section-settings', title: 'Settings', sub: '/ Configuration' },
+};
+ 
+let activeSection = 'dashboard';
+let charts = {};
+ 
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const sec = item.dataset.section;
+    if (!sec) return;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(sections[sec].el).classList.add('active');
+    const info = sections[sec];
+    document.getElementById('header-title').innerHTML = `${info.title} <span>${info.sub}</span>`;
+    activeSection = sec;
+    if (sec === 'risk') renderRiskList();
+  });
+});
+ 
+// ─── CHARTS ───────────────────────────────────────
+const chartDefaults = {
+  color: '#8899b4',
+  plugins: { legend: { labels: { color: '#8899b4', font: { family: 'DM Sans', size: 11 }, boxWidth: 12 } } },
+  scales: {
+    x: { ticks: { color: '#4a5a72', font: { family: 'DM Sans', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { color: 'rgba(255,255,255,0.06)' } },
+    y: { ticks: { color: '#4a5a72', font: { family: 'DM Sans', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { color: 'rgba(255,255,255,0.06)' } }
+  }
+};
+ 
+function mkGrad(ctx, c1, c2) {
+  const g = ctx.createLinearGradient(0,0,0,300);
+  g.addColorStop(0, c1); g.addColorStop(1, c2); return g;
+}
+ 
+// Bar Chart
+(function() {
+  const ctx = document.getElementById('salesBarChart').getContext('2d');
+  const grad1 = mkGrad(ctx,'rgba(59,130,246,0.9)','rgba(59,130,246,0.3)');
+  const grad2 = mkGrad(ctx,'rgba(6,182,212,0.9)','rgba(6,182,212,0.3)');
+  const grad3 = mkGrad(ctx,'rgba(20,184,166,0.9)','rgba(20,184,166,0.3)');
+  const grad4 = mkGrad(ctx,'rgba(139,92,246,0.9)','rgba(139,92,246,0.3)');
+  charts.bar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Espresso','Latte','Cold Brew','Croissant','Waffle','Combo A','Merch','Matcha'],
+      datasets: [{
+        label: 'Sales (₹)',
+        data: [42000, 68000, 54000, 31000, 22000, 88000, 47000, 38000],
+        backgroundColor: [grad1,grad2,grad3,grad4,grad1,grad2,grad3,grad4],
+        borderRadius: 6, borderSkipped: false,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor:'#1a2436', borderColor:'rgba(255,255,255,0.08)', borderWidth:1, padding:10, titleFont:{family:'Syne'}, bodyFont:{family:'DM Sans'} } },
+      scales: chartDefaults.scales,
+      animation: { duration: 900, easing: 'easeOutQuart' }
+    }
+  });
+})();
+ 
+// Doughnut
+(function() {
+  const ctx = document.getElementById('paymentDoughnut').getContext('2d');
+  charts.donut = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Cash','Card','UPI','Digital Wallet'],
+      datasets: [{
+        data: [28, 41, 22, 9],
+        backgroundColor: ['rgba(34,197,94,0.8)','rgba(59,130,246,0.8)','rgba(245,158,11,0.8)','rgba(139,92,246,0.8)'],
+        borderColor: '#111827', borderWidth: 3, hoverOffset: 8
+      }]
+    },
+    options: {
+      cutout: '68%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#8899b4', font: { family: 'DM Sans', size: 11 }, padding: 16, boxWidth: 10 } },
+        tooltip: { backgroundColor:'#1a2436', borderColor:'rgba(255,255,255,0.08)', borderWidth:1, padding:10 }
+      },
+      animation: { animateRotate: true, duration: 1000 }
+    }
+  });
+})();
+ 
+// Line Chart
+(function() {
+  const ctx = document.getElementById('salesLineChart').getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,180);
+  grad.addColorStop(0,'rgba(59,130,246,0.25)'); grad.addColorStop(1,'rgba(59,130,246,0)');
+  const labels = Array.from({length:30},(_,i)=>`Mar ${i+1}`);
+  const data = [8200,9400,7800,11200,10500,13000,9800,14200,12500,15800,11200,16400,14800,18200,15600,19800,17200,21000,18500,22800,19600,24200,21000,25800,22400,27200,23800,28600,25200,30000];
+  charts.line = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Revenue (₹)',
+        data,
+        borderColor: '#3b82f6',
+        backgroundColor: grad,
+        borderWidth: 2, fill: true, tension: 0.4,
+        pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: '#3b82f6'
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor:'#1a2436', borderColor:'rgba(255,255,255,0.08)', borderWidth:1, padding:10 } },
+      scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 6 } } }
+    }
+  });
+})();
+ 
+// Stacked Risk Bar
+(function() {
+  const ctx = document.getElementById('riskStackedChart').getContext('2d');
+  charts.stacked = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Wk 1','Wk 2','Wk 3','Wk 4','Wk 5'],
+      datasets: [
+        { label: 'High', data: [5,8,4,6,23], backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 4, stack: 'risk' },
+        { label: 'Medium', data: [12,18,15,16,61], backgroundColor: 'rgba(245,158,11,0.7)', borderRadius: 4, stack: 'risk' },
+        { label: 'Low', data: [480,620,540,610,2763], backgroundColor: 'rgba(34,197,94,0.7)', borderRadius: 4, stack: 'risk' }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { legend: { labels: { color:'#8899b4', font:{family:'DM Sans',size:11}, boxWidth:10 } }, tooltip: { backgroundColor:'#1a2436', borderColor:'rgba(255,255,255,0.08)', borderWidth:1, padding:10 } },
+      scales: chartDefaults.scales
+    }
+  });
+})();
+ 
+// Risk Pie
+(function() {
+  const ctx = document.getElementById('riskPieChart').getContext('2d');
+  charts.riskPie = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['High (23)','Medium (61)','Low (2,763)'],
+      datasets: [{
+        data: [23,61,2763],
+        backgroundColor: ['rgba(239,68,68,0.75)','rgba(245,158,11,0.75)','rgba(34,197,94,0.75)'],
+        borderColor:'#111827', borderWidth:3, hoverOffset:6
+      }]
+    },
+    options: {
+      cutout:'60%',
+      plugins: { legend: { position:'right', labels: { color:'#8899b4', font:{family:'DM Sans',size:11}, padding:12, boxWidth:10 } }, tooltip: { backgroundColor:'#1a2436', borderColor:'rgba(255,255,255,0.08)', borderWidth:1, padding:10 } }
+    }
+  });
+})();
+ 
+// ─── HEATMAP ──────────────────────────────────────
+(function() {
+  const grid = document.getElementById('heatmap');
+  const colors = ['rgba(34,197,94,0.15)','rgba(34,197,94,0.3)','rgba(34,197,94,0.5)','rgba(245,158,11,0.45)','rgba(239,68,68,0.45)','rgba(239,68,68,0.75)'];
+  for (let i=0; i<28; i++) {
+    const level = Math.floor(Math.random() * colors.length);
+    const cell = document.createElement('div');
+    cell.className = 'heatmap-cell';
+    cell.style.background = colors[level];
+    cell.title = `Day ${i+1}: ${['Low','Low','Medium','Medium','High','Critical'][level]} risk`;
+    grid.appendChild(cell);
+  }
+})();
+ 
+// ─── TRANSACTION TABLE ─────────────────────────────
+function renderTable(data) {
+  const body = document.getElementById('txBody');
+  const payIcon = { Cash:'pay-cash', Card:'pay-card', UPI:'pay-upi', 'Digital Wallet':'pay-digital' };
+  const riskBadge = { High:'badge-red', Medium:'badge-amber', Low:'badge-green' };
+  const statusBadge = { Approved:'badge-green', Flagged:'badge-red', Pending:'badge-amber' };
+  body.innerHTML = data.map(t => `
+    <tr class="${t.status==='Flagged'?'flagged':''}">
+      <td style="font-family:'Syne',sans-serif;font-size:11.5px;color:var(--text-muted);">${t.id}</td>
+      <td style="color:var(--text-primary);font-weight:500;">${t.product}</td>
+      <td><span class="badge badge-blue">${t.category}</span></td>
+      <td class="amount">₹${t.amount.toLocaleString()}</td>
+      <td><span class="payment-icon ${payIcon[t.payment]||'pay-cash'}">${t.payment}</span></td>
+      <td>${t.time}</td>
+      <td><span class="badge ${statusBadge[t.status]}">${t.status}</span></td>
+      <td><span class="badge ${riskBadge[t.risk]}">${t.risk}</span></td>
+    </tr>
+  `).join('');
+}
+ 
+renderTable(TRANSACTIONS);
+ 
+function filterTable() {
+  const search = document.getElementById('txSearch').value.toLowerCase();
+  const status = document.getElementById('txStatusFilter').value;
+  const filtered = TRANSACTIONS.filter(t => {
+    const matchSearch = t.product.toLowerCase().includes(search) || t.category.toLowerCase().includes(search) || t.id.toLowerCase().includes(search);
+    const matchStatus = status === 'all' || t.status === status;
+    return matchSearch && matchStatus;
+  });
+  renderTable(filtered);
+}
+ 
+// ─── RISK LIST ─────────────────────────────────────
+function renderRiskList() {
+  const riskItems = [
+    {name:'Burnout Merch Bundle',meta:'TXN-2404 · Card · ₹8,500',level:'high',score:92},
+    {name:'Cold Brew (Bulk)',meta:'TXN-2414 · Card · ₹6,800',level:'high',score:87},
+    {name:'Staff Meal (Cash)',meta:'TXN-2409 · Cash · ₹5,200',level:'high',score:81},
+    {name:'Café Combo B',meta:'TXN-2412 · Card · ₹2,200',level:'medium',score:54},
+    {name:'Latte (Duplicate)',meta:'TXN-2406 · UPI · ₹240',level:'medium',score:47},
+    {name:'Espresso Shot',meta:'TXN-2401 · Cash · ₹120',level:'low',score:12},
+  ];
+  const sc = {high:'score-high',medium:'score-med',low:'score-low'};
+  document.getElementById('riskList').innerHTML = riskItems.map(r=>`
+    <div class="risk-item ${r.level}">
+      <div class="risk-item-info">
+        <div class="risk-item-name">${r.name}</div>
+        <div class="risk-item-meta">${r.meta}</div>
+      </div>
+      <span class="risk-score-chip ${sc[r.level]}">Score: ${r.score}</span>
+    </div>
+  `).join('');
+}
+ 
+// ─── FILTERS ──────────────────────────────────────
+function applyFilters() {
+  const cat = document.getElementById('filter-category').value;
+  const pay = document.getElementById('filter-payment').value;
+  const filtered = TRANSACTIONS.filter(t => {
+    return (cat === 'all' || t.category === cat) && (pay === 'all' || t.payment === pay);
+  });
+  if (activeSection === 'transactions') renderTable(filtered);
+}
+</script>
+</body>
+</html>
